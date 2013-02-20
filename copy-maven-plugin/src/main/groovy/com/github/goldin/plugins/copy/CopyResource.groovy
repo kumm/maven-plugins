@@ -71,12 +71,27 @@ final class CopyResource extends Resource implements Cloneable
 
     String[] targetPaths
     String[] targetPathsResolved
-
+    
+    String targetExtension
+    
     String[] targetPaths()
     {
         if ( targetPathsResolved != null ) { return targetPathsResolved }
+        
+        List<String> paths = null
 
-        List<String> paths = split( generalBean().list( targetPaths, targetPath ).join( ',' ))
+        if (targetExtension)
+        {       
+            assert (targetRoot), "<targetRoot> need to be defined if you use <targetExtension>"
+            File targetRootDir = new File(targetRoot)
+            assert (targetRootDir && targetRootDir.isDirectory()), "Value of <targetRoot> must be an existing directory"     
+            paths = targetRootDir.list([accept:{d, f-> f ==~ /.*\.$targetExtension/ }] as FilenameFilter).toList()
+        }
+        else
+        {
+            paths = split( generalBean().list( targetPaths, targetPath ).join( ',' ))
+        }
+        
         assert     ( paths || clean ), \
                      '<targetPath>/<targetPaths> need to be defined for resources that do not perform <clean> operation'
 
