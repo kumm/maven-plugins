@@ -4,6 +4,7 @@ import static com.github.goldin.plugins.common.GMojoUtils.*
 import com.github.goldin.plugins.common.Replace
 import org.apache.maven.model.Resource
 import org.gcontracts.annotations.*
+import java.util.zip.ZipFile
 
 
 /**
@@ -81,11 +82,8 @@ final class CopyResource extends Resource implements Cloneable
         List<String> paths = null
 
         if (targetExtension)
-        {       
-            assert (targetRoot), "<targetRoot> need to be defined if you use <targetExtension>"
-            File targetRootDir = new File(targetRoot)
-            assert (targetRootDir && targetRootDir.isDirectory()), "Value of <targetRoot> must be an existing directory"     
-            paths = targetRootDir.list([accept:{d, f-> f ==~ /.*\.$targetExtension/ }] as FilenameFilter).toList()
+        {            
+            paths = targetArchives()
         }
         else
         {
@@ -107,7 +105,20 @@ final class CopyResource extends Resource implements Cloneable
         assert ( targetPathsResolved == null )
         targetPathsResolved = paths.collect { String path -> canonicalPath( path ) } as String[]
     }
-
+    
+    List<String> targetArchives(){
+        assert (targetRoot), "<targetRoot> need to be defined if you use <targetExtension>"
+        assert (destFileName), "<destFileName> need to be defined if you use <targetExtension>"
+        File targetRootDir = new File(targetRoot)
+        assert (targetRootDir && targetRootDir.isDirectory()), "Value of <targetRoot> must be an existing directory"     
+        def targetArchives = []            
+        targetRootDir.eachFileMatch(~/.*\.$targetExtension/){file ->
+            if (new ZipFile(file).getEntry(destFileName)) {
+                targetArchives << file.name
+            }
+        }
+        targetArchives.toList()
+    }
 
     Replace[]     replaces
     Replace       replace
